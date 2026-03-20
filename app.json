@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "extra-arevcoooo",
+    "slug": "snack-36abea7b-1565-4bb6-a133-ee1161da6f8e",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      [
+        "@reactvision/react-viro",
+        {
+          "android": {
+            "xRMode": "AR"
+          },
+          "provider": "none",
+          "ios": {
+            "cameraUsagePermission": "$(PRODUCT_NAME) uses your camera for AR experiences.",
+            "microphoneUsagePermission": "$(PRODUCT_NAME) uses your microphone for AR experiences.",
+            "photosPermission": "$(PRODUCT_NAME) would like to read photos for AR experiences.",
+            "savephotosPermission": "$(PRODUCT_NAME) would like to save photos to your library during AR experiences."
+          }
+        }
+      ]
+    ],
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "$(PRODUCT_NAME) would like to read photos for AR experiences.",
+        "NSPhotoLibraryAddUsageDescription": "Allow $(PRODUCT_NAME) to save photos",
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) uses your camera for AR experiences.",
+        "NSMicrophoneUsageDescription": "$(PRODUCT_NAME) uses your microphone for AR experiences."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.grassjelly.snack36abea7b15654bb6a133ee1161da6f8e"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c4167d8c-88f2-4580-8d55-275e2d160ac7"
+      }
+    },
+    "owner": "grassjelly"
+  }
+}
