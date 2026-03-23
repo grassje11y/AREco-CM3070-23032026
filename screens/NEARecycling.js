@@ -4,13 +4,14 @@ import * as Haptics from "expo-haptics";
 import { WebView } from "react-native-webview";
 import { useSettings } from "../context/SettingsContext";
 
-// Replace this with the exact URL your Botpress bot links to for the Recycling Search Engine
+//NEA recycling search engine link
 const RECYCLING_SEARCH_URL = "https://www.nea.gov.sg/recycling-search-engine";
 
 export default function RecyclingSearchScreen() {
   const { theme } = useSettings();
   const isLight = theme === "light";
 
+  // browser build cannot embed webview a button that opens nea in a new tab
   if (Platform.OS === "web") {
     return (
       <View

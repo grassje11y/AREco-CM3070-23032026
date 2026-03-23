@@ -23,7 +23,6 @@ const BOTPRESS_EMBED_HTML = `<!doctype html>
         overflow: hidden;
       }
 
-      /* Force Botpress webchat containers to mount at the very top. */
       #bp-webchat, #botpress-webchat, #bp-embedded-webchat {
         position: absolute;
         top: 0;
@@ -38,10 +37,8 @@ const BOTPRESS_EMBED_HTML = `<!doctype html>
     </style>
   </head>
   <body>
-    <!-- Botpress embedded mode usually expects a container div -->
     <div id="bp-webchat"></div>
     <div id="botpress-webchat"></div>
-    <!-- Botpress "Where to show chat" container id (per deploy settings) -->
     <div id="bp-embedded-webchat"></div>
     <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
     <script src="https://files.bpcontent.cloud/2025/12/16/09/20251216091315-NKIYVQFT.js" defer></script>
@@ -52,8 +49,8 @@ export default function ChatScreen() {
   const { theme } = useSettings();
   const isLight = theme === "light";
 
+  // web has no embedded webview here so open the bot html string in a new browser tab
   const openWebChatInNewTab = async () => {
-    // WebView isn't supported on Expo Web. Open the embed in a new tab instead.
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (typeof window !== "undefined" && window?.open) {
       const url = `data:text/html;charset=utf-8,${encodeURIComponent(BOTPRESS_EMBED_HTML)}`;
@@ -84,7 +81,7 @@ export default function ChatScreen() {
     <View
       style={[styles.container, isLight && styles.containerLight]}
       accessible
-      accessibilityLabel="Tips and chatbot screen"
+      accessibilityLabel="chatbot screen"
     >
       <WebView
         source={{ html: BOTPRESS_EMBED_HTML }}

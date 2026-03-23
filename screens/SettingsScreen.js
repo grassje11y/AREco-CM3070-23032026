@@ -9,11 +9,9 @@ export default function SettingsScreen() {
     setTheme,
     fontScale,
     setFontScale,
-    resolvedFontFamily,
   } = useSettings();
 
   const isLight = theme === "light";
-  const fontStyle = resolvedFontFamily ? { fontFamily: resolvedFontFamily } : null;
 
   return (
     <View
@@ -22,7 +20,7 @@ export default function SettingsScreen() {
       accessibilityLabel="Settings screen"
     >
       <Text
-        style={[styles.title, isLight && styles.titleLight, { fontSize: 22 * fontScale }, fontStyle]}
+        style={[styles.title, isLight && styles.titleLight, { fontSize: 26 * fontScale }]}
       >
         Settings
       </Text>
@@ -32,19 +30,17 @@ export default function SettingsScreen() {
           style={[
             styles.sectionTitle,
             isLight && styles.sectionTitleLight,
-            { fontSize: 14 * fontScale },
-            fontStyle,
+            { fontSize: 19 * fontScale },
           ]}
         >
           Theme
         </Text>
-        <View style={styles.row}>
+        <View style={[styles.row, styles.rowTall]}>
           <Text
             style={[
               styles.label,
               isLight && styles.labelLight,
-              { fontSize: 13 * fontScale },
-              fontStyle,
+              { fontSize: 18 * fontScale },
             ]}
           >
             {isLight ? "Light mode" : "Dark mode"}
@@ -60,13 +56,12 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <View style={[styles.section, isLight && styles.sectionLight]}>
+      <View style={[styles.section, styles.sectionFontBlock, isLight && styles.sectionLight]}>
         <Text
           style={[
             styles.sectionTitle,
             isLight && styles.sectionTitleLight,
-            { fontSize: 14 * fontScale },
-            fontStyle,
+            { fontSize: 19 * fontScale },
           ]}
         >
           Font size
@@ -75,8 +70,8 @@ export default function SettingsScreen() {
           style={[
             styles.label,
             isLight && styles.labelLight,
-            { fontSize: 13 * fontScale },
-            fontStyle,
+            styles.labelSpaced,
+            { fontSize: 18 * fontScale },
           ]}
         >
           Adjust text size across the app
@@ -94,8 +89,7 @@ export default function SettingsScreen() {
               style={[
                 styles.chipText,
                 isLight && styles.chipTextLight,
-                { fontSize: 13 * fontScale },
-                fontStyle,
+                { fontSize: 17 * fontScale },
               ]}
             >
               Small
@@ -113,8 +107,7 @@ export default function SettingsScreen() {
               style={[
                 styles.chipText,
                 isLight && styles.chipTextLight,
-                { fontSize: 13 * fontScale },
-                fontStyle,
+                { fontSize: 17 * fontScale },
               ]}
             >
               Normal
@@ -132,8 +125,7 @@ export default function SettingsScreen() {
               style={[
                 styles.chipText,
                 isLight && styles.chipTextLight,
-                { fontSize: 13 * fontScale },
-                fontStyle,
+                { fontSize: 17 * fontScale },
               ]}
             >
               Large
@@ -141,8 +133,6 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
       </View>
-
-      {/* Font family toggle intentionally removed (fontFamily can still be controlled via other UI). */}
     </View>
   );
 }
@@ -158,7 +148,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "white",
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: "800",
     marginBottom: 16,
   },
@@ -166,21 +156,26 @@ const styles = StyleSheet.create({
     color: "#020617",
   },
   section: {
-    marginBottom: 38,
-    padding: 14,
-    borderRadius: 16,
+    marginBottom: 50,
+    paddingVertical: 24,
+    paddingHorizontal: 22,
+    borderRadius: 20,
     backgroundColor: "#020617",
     borderWidth: 1,
     borderColor: "#1f2937",
+    minHeight: 132,
   },
   sectionLight: {
     backgroundColor: "#ffffff",
     borderColor: "#e5e7eb",
   },
+  sectionFontBlock: {
+    minHeight: 220,
+  },
   sectionTitle: {
     color: "white",
     fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 14,
   },
   sectionTitleLight: {
     color: "#020617",
@@ -190,20 +185,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  rowTall: {
+    minHeight: 52,
+    paddingVertical: 4,
+  },
+  labelSpaced: {
+    marginBottom: 14,
+  },
   label: {
     color: "#e5e7eb",
-    fontSize: 13,
+    fontSize: 18,
   },
   labelLight: {
     color: "#111827",
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#4b5563",
-    marginRight: 8,
+    marginRight: 10,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
   },
   chipActive: {
     backgroundColor: "pink",
@@ -219,7 +224,8 @@ const styles = StyleSheet.create({
   fontButtonsRow: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    marginTop: 8,
+    flexWrap: "wrap",
+    marginTop: 4,
   },
 });
 

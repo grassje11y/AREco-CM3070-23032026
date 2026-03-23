@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSettings } from "../context/SettingsContext";
 
 const PRIZES = [
-  { id: "badge-eco-explorer", name: "Eco Explorer badge", cost: 50, description: "Show off your 50-point eco streak." },
-  { id: "theme-leaf", name: "Leaf accent theme", cost: 80, description: "Unlock a subtle leafy accent for future designs." },
-  { id: "avatar-pet", name: "Recycling pet avatar", cost: 120, description: "Adopt a cute recycling pet for your profile." },
+  { id: "badge-honour", name: "Badge of Honour", cost: 5023680, description: "For recycling so consistently!" },
+  { id: "theme-cool", name: "Really cool theme", cost: 80670081, description: "Unlock the coolest theme" },
+  { id: "avatar-pet", name: "A really awesome pet avatar", cost: 12020907830, description: "Adopt the most awesome recycling pet" },
 ];
 
 export default function PrizesScreen({ points, onRedeem }) {
@@ -14,6 +14,7 @@ export default function PrizesScreen({ points, onRedeem }) {
   const isLight = theme === "light";
   const [recentRedeemedId, setRecentRedeemedId] = useState(null);
 
+  // tell parent to spend points then mark this prize as redeemed in the ui when it succeeds
   const handleRedeem = async (prize) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (typeof onRedeem === "function") {
@@ -58,14 +59,17 @@ export default function PrizesScreen({ points, onRedeem }) {
           return (
             <View
               key={prize.id}
-              style={[styles.prizeCard, isLight && styles.prizeCardLight]}
+              style={[styles.prizeContainer, isLight && styles.prizeContainerLight]}
             >
-              <View style={{ flex: 1 }}>
+              <View style={[styles.prizeIconWrap, isLight && styles.prizeIconWrapLight]}>
+                <Text style={[styles.prizeIcon, { fontSize: 28 * fontScale }]}>🎁</Text>
+              </View>
+              <View style={styles.prizeBody}>
                 <Text
                   style={[
                     styles.prizeName,
                     isLight && styles.prizeNameLight,
-                    { fontSize: 15 * fontScale },
+                    { fontSize: 17 * fontScale },
                   ]}
                 >
                   {prize.name}
@@ -74,26 +78,28 @@ export default function PrizesScreen({ points, onRedeem }) {
                   style={[
                     styles.prizeDescription,
                     isLight && styles.prizeDescriptionLight,
-                    { fontSize: 13 * fontScale },
+                    { fontSize: 14 * fontScale },
                   ]}
                 >
                   {prize.description}
                 </Text>
-                <Text
-                  style={[
-                    styles.prizeCost,
-                    isLight && styles.prizeCostLight,
-                    { fontSize: 12 * fontScale },
-                  ]}
-                >
-                  Cost: {prize.cost} pts
-                </Text>
+                <View style={[styles.costPill, isLight && styles.costPillLight]}>
+                  <Text
+                    style={[
+                      styles.prizeCost,
+                      isLight && styles.prizeCostLight,
+                      { fontSize: 13 * fontScale },
+                    ]}
+                  >
+                    {prize.cost.toLocaleString()} pts
+                  </Text>
+                </View>
                 {recently && (
                   <Text
                     style={[
                       styles.redeemedText,
                       isLight && styles.redeemedTextLight,
-                      { fontSize: 11 * fontScale },
+                      { fontSize: 12 * fontScale },
                     ]}
                   >
                     Redeemed! (for demo purposes only)
@@ -113,8 +119,8 @@ export default function PrizesScreen({ points, onRedeem }) {
                     : `Need more points to redeem ${prize.name}`
                 }
               >
-                <Text style={styles.redeemButtonText}>
-                  {affordable ? "Redeem" : "Need points"}
+                <Text style={[styles.redeemButtonText, { fontSize: 15 * fontScale }]}>
+                  {affordable ? "Redeem prize" : "Not enough points"}
                 </Text>
               </Pressable>
             </View>
@@ -153,39 +159,94 @@ const styles = StyleSheet.create({
     color: "#4b5563",
   },
   prizeList: {
-    gap: 12,
+    gap: 16,
+    paddingBottom: 24,
   },
-  prizeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    borderRadius: 18,
-    backgroundColor: "#020617",
-    borderWidth: 1,
-    borderColor: "#1f2937",
-    marginBottom: 10,
+  prizeContainer: {
+    borderRadius: 20,
+    padding: 18,
+    backgroundColor: "#0f172a",
+    borderWidth: 2,
+    borderColor: "#334155",
+    marginBottom: 4,
+    minHeight: 200,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: { elevation: 6 },
+      default: {},
+    }),
   },
-  prizeCardLight: {
+  prizeContainerLight: {
     backgroundColor: "#ffffff",
-    borderColor: "#e5e7eb",
+    borderColor: "#cbd5e1",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#64748b",
+        shadowOpacity: 0.15,
+      },
+      default: {},
+    }),
+  },
+  prizeIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#1e293b",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#475569",
+  },
+  prizeIconWrapLight: {
+    backgroundColor: "#f1f5f9",
+    borderColor: "#e2e8f0",
+  },
+  prizeIcon: {
+    lineHeight: 34,
+  },
+  prizeBody: {
+    flexGrow: 1,
+    marginBottom: 16,
+  },
+  costPill: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "#1e293b",
+    borderWidth: 1,
+    borderColor: "#475569",
+  },
+  costPillLight: {
+    backgroundColor: "#e2e8f0",
+    borderColor: "#cbd5e1",
   },
   prizeName: {
     color: "white",
-    fontWeight: "700",
-    marginBottom: 2,
+    fontWeight: "800",
+    marginBottom: 8,
   },
   prizeNameLight: {
     color: "#020617",
   },
   prizeDescription: {
     color: "#9ca3af",
-    marginBottom: 4,
+    marginBottom: 0,
+    lineHeight: 22,
   },
   prizeDescriptionLight: {
     color: "#4b5563",
   },
   prizeCost: {
-    color: "#cbd5e1",
+    color: "#f1f5f9",
+    fontWeight: "700",
   },
   prizeCostLight: {
     color: "#0f172a",
@@ -198,19 +259,20 @@ const styles = StyleSheet.create({
     color: "#16a34a",
   },
   redeemButton: {
-    marginLeft: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: "pink",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: "#f472b6",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   redeemButtonDisabled: {
-    backgroundColor: "#4b5563",
+    backgroundColor: "#475569",
   },
   redeemButtonText: {
     color: "#020617",
-    fontWeight: "700",
-    fontSize: 13,
+    fontWeight: "800",
   },
 });
 

@@ -9,7 +9,7 @@ export default function ARScreen() {
   const { theme, fontScale } = useSettings();
   const isLight = theme === "light";
 
-  // ViroReact is native-only; keep web from crashing/blanking.
+  // keep web from crashing/blanking.
   if (Platform.OS === "web") {
     return (
       <View
@@ -25,7 +25,7 @@ export default function ARScreen() {
     );
   }
 
-  // Native runtime: load ViroReact dynamically to avoid bundling issues.
+  // require viro only on native so web and expo go bundles do not break at import time
   let Viro;
   try {
     Viro = require("@reactvision/react-viro");
@@ -44,7 +44,7 @@ export default function ARScreen() {
     );
   }
 
-  // Some bundlers/react-native configurations may resolve the module to `undefined`
+
   // (no throw). Guard against that to avoid crashing with a white screen.
   if (!Viro || !Viro.ViroARSceneNavigator) {
     return (
@@ -66,7 +66,7 @@ export default function ARScreen() {
 
   if (!didCreateViroMaterials) {
     try {
-      // This requires Viro's native renderer to be present.
+      
       ViroMaterials.createMaterials({
         boxMaterial: {
           diffuseColor: "#22c55e",
@@ -75,8 +75,7 @@ export default function ARScreen() {
       });
       haveBoxMaterial = true;
     } catch (e) {
-      // If the native side isn't installed (common when running Expo Go),
-      // materials will fail to initialize. We'll show AR without custom materials.
+
       haveBoxMaterial = false;
     }
     didCreateViroMaterials = true;

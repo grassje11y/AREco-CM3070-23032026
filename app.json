@@ -2,6 +2,7 @@
   "expo": {
     "name": "extra-arevcoooo",
     "slug": "snack-36abea7b-1565-4bb6-a133-ee1161da6f8e",
+    "scheme": "areco",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

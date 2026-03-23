@@ -1,5 +1,16 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, Text, Pressable, ActivityIndicator, Image, StyleSheet, Animated } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Animated,
+  Alert,
+  Platform,
+  DevSettings,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useCameraPermissions } from "expo-camera";
 import HomeScreen from "./screens/Home";
@@ -13,6 +24,51 @@ import PrizesScreen from "./screens/PrizesScreen";
 import ARScreen from "./screens/ARScreen";
 import QuickActionsMenu from "./components/QuickMenu";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  pickDailyChallengeIds,
+  getChallengeById,
+  isChallengeComplete,
+} from "./constants/challenges";
+import { parseDailyChallengeAwards } from "./constants/challengeStorageParse";
+import { computeDailyCheckIn } from "./constants/streakCheckIn";
+import { STORAGE_KEYS, clearArecoStorage } from "./constants/arecoStorageKeys";
+import { getSingaporeDateKey, getSingaporeYesterdayKey } from "./constants/singaporeDate";
+
+// reload the bundle so the next frame loads with empty storage
+function reloadAppAfterClear() {
+  if (Platform.OS === "web" && typeof globalThis !== "undefined" && globalThis.location?.reload) {
+    globalThis.location.reload();
+    return;
+  }
+  if (typeof DevSettings?.reload === "function") {
+    DevSettings.reload();
+  }
+}
+
+// ask then wipe storage and reload the app
+function confirmClearStorageAndReload() {
+  Alert.alert(
+    "Clear AREco data?",
+    "Removes points, streak, scan history, and challenge progress on this device. The app will reload.",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await clearArecoStorage();
+            reloadAppAfterClear();
+          } catch (e) {
+            console.warn("Clear storage failed:", e);
+            Alert.alert("Error", "Could not clear storage.");
+          }
+        },
+      },
+    ]
+  );
+}
 
 function AppInner() {
   const cameraRef = useRef(null);
@@ -22,23 +78,128 @@ function AppInner() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [overlayCategory, setOverlayCategory] = useState(null);
   const [err, setErr] = useState(null);
-  const [activeScreen, setActiveScreen] = useState("home"); // "home" | "scanner" | "history" | "tips" | "game" | "settings" | "search" | "prizes"
+  const [activeScreen, setActiveScreen] = useState("home"); // home | scanner | histor | tips | game | settings | search | prizes
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lastCheckInDate, setLastCheckInDate] = useState(null);
-  const [history, setHistory] = useState([]); // { id, uri, category, createdAt }
+  const [hydrating, setHydrating] = useState(true);
+  const [history, setHistory] = useState([]); 
   const [gamePlayed, setGamePlayed] = useState(false);
   const [chatUsed, setChatUsed] = useState(false);
-  const [awardedChallenges, setAwardedChallenges] = useState({}); // { [id]: true }
+  const [dailyChallengeAwards, setDailyChallengeAwards] = useState({});
+  const [visitedScreens, setVisitedScreens] = useState({});
+
+  useEffect(() => {
+    // read points streak history games chat flags challenges visits from disk and migrate old challenge data if needed
+    (async () => {
+      try {
+        const [storedPoints, storedStreak, storedLastCheckInDate] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.points),
+          AsyncStorage.getItem(STORAGE_KEYS.streak),
+          AsyncStorage.getItem(STORAGE_KEYS.lastCheckInDate),
+        ]);
+
+        const [
+          storedHistory,
+          storedGamePlayed,
+          storedChatUsed,
+          storedOldAwarded,
+          storedDailyAwards,
+          storedVisited,
+        ] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.history),
+          AsyncStorage.getItem(STORAGE_KEYS.gamePlayed),
+          AsyncStorage.getItem(STORAGE_KEYS.chatUsed),
+          AsyncStorage.getItem(STORAGE_KEYS.awardedChallenges),
+          AsyncStorage.getItem(STORAGE_KEYS.dailyChallengeAwards),
+          AsyncStorage.getItem(STORAGE_KEYS.visitedScreens),
+        ]);
+
+        if (storedPoints !== null) setPoints(Number(storedPoints) || 0);
+        if (storedStreak !== null) setStreak(Number(storedStreak) || 0);
+        if (storedLastCheckInDate !== null) setLastCheckInDate(storedLastCheckInDate);
+
+        if (storedHistory !== null) {
+          try {
+            const parsed = JSON.parse(storedHistory);
+            if (Array.isArray(parsed)) setHistory(parsed);
+          } catch {
+            // ignore corrupted history payload
+          }
+        }
+
+        if (storedGamePlayed !== null) setGamePlayed(storedGamePlayed === "true");
+        if (storedChatUsed !== null) setChatUsed(storedChatUsed === "true");
+
+        const todayForAwards = getSingaporeDateKey(new Date());
+        const awards = parseDailyChallengeAwards(
+          storedDailyAwards,
+          storedOldAwarded,
+          todayForAwards
+        );
+        if (Object.keys(awards).length > 0) {
+          setDailyChallengeAwards(awards);
+        }
+
+        if (storedVisited !== null) {
+          try {
+            const parsed = JSON.parse(storedVisited);
+            if (parsed && typeof parsed === "object") setVisitedScreens(parsed);
+          } catch {
+            // ignore
+          }
+        }
+      } catch (e) {
+        console.log("Failed to load progress from AsyncStorage:", e);
+      } finally {
+        setHydrating(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (hydrating) return;
+
+    // write points streak and last check in string whenever they change
+    AsyncStorage.setItem(STORAGE_KEYS.points, String(points)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.streak, String(streak)).catch(() => {});
+    if (lastCheckInDate) {
+      AsyncStorage.setItem(STORAGE_KEYS.lastCheckInDate, String(lastCheckInDate)).catch(() => {});
+    } else {
+      AsyncStorage.removeItem(STORAGE_KEYS.lastCheckInDate).catch(() => {});
+    }
+  }, [hydrating, points, streak, lastCheckInDate]);
+
+  useEffect(() => {
+    if (hydrating) return;
+
+    // save history game flags and per day challenge payouts so restarts do not duplicate rewards
+    AsyncStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.gamePlayed, String(gamePlayed)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.chatUsed, String(chatUsed)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.dailyChallengeAwards, JSON.stringify(dailyChallengeAwards)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEYS.visitedScreens, JSON.stringify(visitedScreens)).catch(() => {});
+  }, [hydrating, history, gamePlayed, chatUsed, dailyChallengeAwards, visitedScreens]);
 
   useEffect(() => {
     setErr(null);
-    // reset category when a new photo is taken
+    // new photo means old category choice should clear
     setSelectedCategory(null);
   }, [photoUri]);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getSingaporeDateKey(new Date());
   const hasCheckedInToday = lastCheckInDate === todayKey;
+
+  useEffect(() => {
+    if (hydrating) return;
+    // flip visit flags when user opens screens that daily challenges care about
+    const trackVisit = ["history", "search", "settings", "prizes", "ar"];
+    if (!trackVisit.includes(activeScreen)) return;
+    setVisitedScreens((prev) => {
+      if (prev[activeScreen]) return prev;
+      return { ...prev, [activeScreen]: true };
+    });
+  }, [activeScreen, hydrating]);
 
   const [overlayPulse] = useState(new Animated.Value(1));
 
@@ -48,6 +209,7 @@ function AppInner() {
       return;
     }
 
+    // gentle pulse on the scan result bubble so it is easier to notice
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(overlayPulse, { toValue: 1.1, duration: 600, useNativeDriver: true }),
@@ -62,6 +224,7 @@ function AppInner() {
     };
   }, [overlayCategory, overlayPulse]);
 
+  // map each bin type to border color emoji and title color for the camera overlay
   const getOverlayStyleForCategory = (category) => {
     switch (category) {
       case "Plastic":
@@ -78,26 +241,19 @@ function AppInner() {
     }
   };
 
+  // bump or reset streak using singapore yesterday then grant points and a big bonus at seven days
   const handleDailyCheckIn = () => {
-    if (hasCheckedInToday) return;
+    const outcome = computeDailyCheckIn({
+      lastCheckInDate,
+      streak,
+      todayKey,
+      yesterdayKey: getSingaporeYesterdayKey(new Date()),
+    });
+    if (!outcome.applied) return;
 
-    let nextStreak = 1;
-    if (lastCheckInDate) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayKey = yesterday.toISOString().slice(0, 10);
-      if (lastCheckInDate === yesterdayKey) {
-        nextStreak = streak + 1;
-      }
-    }
-
-    setStreak(nextStreak);
-    setLastCheckInDate(todayKey);
-    setPoints((prev) => prev + 5);
-
-    if (nextStreak >= 7) {
-      setPoints((prev) => prev + 50);
-    }
+    setStreak(outcome.nextStreak);
+    setLastCheckInDate(outcome.newLastCheckInDate);
+    setPoints((prev) => prev + outcome.pointsToAdd);
   };
 
   const handleEarnGamePoints = (amount) => {
@@ -105,8 +261,8 @@ function AppInner() {
     setGamePlayed(true);
   };
 
+  // subtract cost from points only when balance is enough and tell caller if it worked
   const handleRedeemPrize = (prize) => {
-    // Ensure enough points before redeeming
     if (!prize || typeof prize.cost !== "number") return false;
     let success = false;
     setPoints((prev) => {
@@ -119,6 +275,7 @@ function AppInner() {
     return success;
   };
 
+  // take one picture from the camera ref and store uri or set error text
   const takePhoto = async () => {
     try {
       setBusy(true);
@@ -142,6 +299,7 @@ function AppInner() {
     }
   };
 
+  // store chosen bin show overlay and prepend a history row for this scan
   const handleCategorySelection = (category) => {
     setSelectedCategory(category);
     setOverlayCategory(category);
@@ -172,33 +330,72 @@ function AppInner() {
     }
   }, [activeScreen]);
 
-  useEffect(() => {
-    const scanCompleted = history.length >= 3;
-    const gameCompleted = gamePlayed;
-    const chatCompleted = chatUsed;
-
-    const mapping = {
-      "scan-3-items": scanCompleted,
-      "play-game-once": gameCompleted,
-      "ask-chatbot": chatCompleted,
-    };
-
-    Object.entries(mapping).forEach(([id, done]) => {
-      if (done && !awardedChallenges[id]) {
-        setPoints((prev) => prev + 5);
-        setAwardedChallenges((prev) => ({ ...prev, [id]: true }));
-      }
-    });
-  }, [history.length, gamePlayed, chatUsed, awardedChallenges]);
-
-  const completedChallenges = {
-    "scan-3-items": history.length >= 3,
-    "play-game-once": gamePlayed,
-    "ask-chatbot": chatUsed,
+  const challengeCtx = {
+    history,
+    gamePlayed,
+    chatUsed,
+    visitedScreens,
+    hasCheckedInToday,
   };
+
+  const todayChallengeIds = pickDailyChallengeIds(todayKey, 3);
+  const dailyChallenges = todayChallengeIds
+    .map((id) => getChallengeById(id))
+    .filter(Boolean);
+
+  const completedChallenges = Object.fromEntries(
+    todayChallengeIds.map((id) => [id, isChallengeComplete(id, challengeCtx)])
+  );
+
+  useEffect(() => {
+    if (hydrating) return;
+    // add five points per todays challenge that is done and not yet marked paid for this date
+    const ctx = {
+      history,
+      gamePlayed,
+      chatUsed,
+      visitedScreens,
+      hasCheckedInToday,
+    };
+    const ids = pickDailyChallengeIds(todayKey, 3);
+    const todayAwarded = dailyChallengeAwards[todayKey] || {};
+    const nextAwards = { ...todayAwarded };
+    let pointsToAdd = 0;
+    for (const id of ids) {
+      if (!isChallengeComplete(id, ctx)) continue;
+      if (nextAwards[id]) continue;
+      nextAwards[id] = true;
+      pointsToAdd += 5;
+    }
+    if (pointsToAdd > 0) {
+      setPoints((prev) => prev + pointsToAdd);
+      setDailyChallengeAwards((prev) => ({
+        ...prev,
+        [todayKey]: nextAwards,
+      }));
+    }
+  }, [
+    hydrating,
+    todayKey,
+    history,
+    gamePlayed,
+    chatUsed,
+    visitedScreens,
+    hasCheckedInToday,
+    dailyChallengeAwards,
+  ]);
 
   const { theme, fontScale } = useSettings();
 
+  if (hydrating) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#020617", alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color="#ec4899" />
+      </View>
+    );
+  }
+
+  // pick which screen fills the main area under the header and menu
   const renderActiveScreen = () => {
     if (activeScreen === "home")
       return (
@@ -208,6 +405,7 @@ function AppInner() {
           streak={streak}
           hasCheckedInToday={hasCheckedInToday}
           onDailyCheckIn={handleDailyCheckIn}
+          dailyChallenges={dailyChallenges}
           completedChallenges={completedChallenges}
         />
       );
@@ -249,9 +447,18 @@ function AppInner() {
   return (
     <View style={[styles.container, isLight && styles.containerLight]}>
       <View style={[styles.header, isLight && styles.headerLight]}>
-        <Text style={[styles.logoText, isLight && styles.logoTextLight, { fontSize: 20 * fontScale }]}>
-          ✧˖ AREco ˙✧˖° ༘ ⋆｡˚
-        </Text>
+        <Pressable
+          onLongPress={__DEV__ ? confirmClearStorageAndReload : undefined}
+          delayLongPress={700}
+          accessibilityLabel="AREco header"
+          accessibilityHint={
+            __DEV__ ? "Long press to clear saved app data (development only)" : undefined
+          }
+        >
+          <Text style={[styles.logoText, isLight && styles.logoTextLight, { fontSize: 20 * fontScale }]}>
+            ✧˖ AREco ˙✧˖° ༘ ⋆｡˚
+          </Text>
+        </Pressable>
       </View>
 
       <QuickActionsMenu onNavigate={setActiveScreen} />

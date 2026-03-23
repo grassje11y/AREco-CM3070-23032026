@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
+import { View, Text, Pressable, StyleSheet, Platform, Image } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSettings } from "../context/SettingsContext";
 
@@ -8,69 +8,64 @@ export default function QuickActionsMenu({ onNavigate }) {
   const isLight = theme === "light";
   const [open, setOpen] = useState(false);
 
+  // skip haptics on web and absorb errors on devices that do not support them
   const safeHaptics = async (cb) => {
-    // `expo-haptics` is not reliably supported on the web build.
-    // Avoid crashing the whole app on web.
     if (Platform.OS === "web") return;
     try {
       await cb();
-    } catch {
-      // Ignore haptic failures on unsupported platforms.
-    }
+    } catch {}
   };
 
   return (
     <View style={styles.container}>
-      <Pressable
-        style={[styles.menuToggle, isLight && styles.menuToggleLight]}
-        onPress={async () => {
-          await safeHaptics(() => Haptics.selectionAsync());
-          setOpen((prev) => !prev);
-        }}
-        accessibilityLabel="Toggle the menu"
-      >
-        <Text
-          style={[
-            styles.menuToggleIcon,
-            isLight && styles.menuToggleIconLight,
-            { fontSize: 16 * fontScale },
-          ]}
+      <View style={styles.topRow}>
+        <Pressable
+          style={[styles.menuToggle, isLight && styles.menuToggleLight]}
+          onPress={async () => {
+            await safeHaptics(() => Haptics.selectionAsync());
+            setOpen((prev) => !prev);
+          }}
+          accessibilityLabel="Toggle the menu"
         >
-          ☰
-        </Text>
-        <Text
-          style={[
-            styles.menuToggleText,
-            isLight && styles.menuToggleTextLight,
-            { fontSize: 15 * fontScale },
-          ]}
+          <Text
+            style={[
+              styles.menuToggleIcon,
+              isLight && styles.menuToggleIconLight,
+              { fontSize: 16 * fontScale },
+            ]}
+          >
+            ☰
+          </Text>
+          <Text
+            style={[
+              styles.menuToggleText,
+              isLight && styles.menuToggleTextLight,
+              { fontSize: 15 * fontScale },
+            ]}
+          >
+            ⤷ ゛Menu ˎˊ˗
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.homeButton, isLight && styles.homeButtonLight]}
+          onPress={async () => {
+            await safeHaptics(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+            onNavigate("home");
+            setOpen(false);
+          }}
+          accessibilityLabel="Go to home screen"
         >
-         ⤷ ゛Menu ˎˊ˗ 
-        </Text>
-      </Pressable>
+          <Image
+            source={require("../assets/home.png")}
+            style={styles.homeIcon}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </View>
 
       {open && (
         <View style={styles.buttons}>
-          <Pressable
-            style={[styles.button, isLight && styles.buttonLight]}
-            onPress={async () => {
-              await safeHaptics(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
-              onNavigate("home");
-              setOpen(false);
-            }}
-            accessibilityLabel="Go to home screen"
-          >
-            <Text
-              style={[
-                styles.buttonText,
-                isLight && styles.buttonTextLight,
-                { fontSize: 15 * fontScale },
-              ]}
-            >
-              Home
-            </Text>
-          </Pressable>
-
           <Pressable
             style={[styles.primaryButton, isLight && styles.primaryButtonLight]}
             onPress={async () => {
@@ -107,7 +102,7 @@ export default function QuickActionsMenu({ onNavigate }) {
               onNavigate("game");
               setOpen(false);
             }}
-            accessibilityLabel="Play the recycling game"
+            accessibilityLabel="Play recycling games"
           >
             <Text
               style={[
@@ -209,7 +204,7 @@ export default function QuickActionsMenu({ onNavigate }) {
           </Pressable>
           
            <Pressable
-            style={[styles.button, isLight && styles.buttonLight]}
+            style={[styles.button, styles.prizesButton, isLight && styles.buttonLight]}
             onPress={async () => {
               await safeHaptics(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
               onNavigate("prizes");
@@ -221,7 +216,7 @@ export default function QuickActionsMenu({ onNavigate }) {
               style={[
                 styles.buttonText,
                 isLight && styles.buttonTextLight,
-                { fontSize: 15 * fontScale },
+                { fontSize: 18 * fontScale },
               ]}
             >
               Prizes
@@ -260,18 +255,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 18,
+    marginBottom: 5,
+  },
   menuToggle: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 18,
     borderRadius: 999,
     backgroundColor: "#020617",
     borderWidth: 1,
     borderColor: "#1f2937",
-    marginTop: 18,
-    marginBottom: 5,
+  },
+  homeButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 999,
+    backgroundColor: "#020617",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 19,
+  },
+  homeButtonLight: {
+    backgroundColor: "#ffffff",
+  },
+  homeIcon: {
+    width: 40,
+    height: 40,
   },
   menuToggleLight: {
     backgroundColor: "#ffffff",
@@ -334,6 +350,13 @@ const styles = StyleSheet.create({
   buttonLight: {
     backgroundColor: "#ffffff",
     borderColor: "#e5e7eb",
+  },
+  /** Slightly larger tap target + text for the Prizes entry */
+  prizesButton: {
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+    marginBottom: 12,
+    minHeight: 54,
   },
   buttonText: {
     color: "white",

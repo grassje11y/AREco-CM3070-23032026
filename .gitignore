@@ -33,6 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# jest machine-readable report (use test/run-history.log or test:log for a trail)
+test/last-results.json
+
 # typescript
 *.tsbuildinfo
 

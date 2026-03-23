@@ -3,40 +3,20 @@ import { ScrollView, View, Text, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSettings } from "../context/SettingsContext";
 
-const CHALLENGES = [
-  {
-    id: "scan-3-items",
-    title: "Scan 3 items",
-    description: "Scan and classify 3 different items correctly today.",
-  },
-  {
-    id: "play-game-once",
-    title: "Play the game",
-    description: "Complete one full round of the recycling mini game.",
-  },
-  {
-    id: "ask-chatbot",
-    title: "Ask the assistant",
-    description: "Ask the chatbot how to recycle something new.",
-  },
-];
-
 export default function HomeScreen({
   onNavigate,
   points,
   streak,
   hasCheckedInToday,
   onDailyCheckIn,
+  dailyChallenges = [],
   completedChallenges,
-  onCompleteChallenge,
 }) {
   const { fontScale, theme } = useSettings();
   const isLight = theme === "light";
 
   return (
     <ScrollView
-      // react-native-web requires layout props like `justifyContent` to be
-      // applied via `contentContainerStyle` (not `style`).
       style={[styles.homeScrollOuter, isLight && styles.homeScrollOuterLight]}
       contentContainerStyle={styles.homeContentContainer}
       accessible
@@ -124,16 +104,11 @@ export default function HomeScreen({
               { fontSize: 13 * fontScale },
             ]}
           >
-            Complete challenges to earn +5 points each.
+            3 random challenges each day — +5 points each when completed.
           </Text>
-          {CHALLENGES.map((ch) => {
+          {dailyChallenges.map((ch) => {
             const done = completedChallenges?.[ch.id];
-            const targetScreen =
-              ch.id === "scan-3-items"
-                ? "scanner"
-                : ch.id === "play-game-once"
-                ? "game"
-                : "tips";
+            const targetScreen = ch.screen;
             return (
               <View key={ch.id} style={styles.challengeRow}>
                 <View style={{ flex: 1 }}>
@@ -165,11 +140,8 @@ export default function HomeScreen({
                     if (onNavigate && targetScreen) {
                       onNavigate(targetScreen);
                     }
-                    if (onCompleteChallenge) {
-                      onCompleteChallenge(ch.id);
-                    }
                   }}
-                  accessibilityLabel={done ? "Challenge completed" : `Mark challenge ${ch.title} as done`}
+                  accessibilityLabel={done ? "Challenge completed" : `Go to ${ch.title}`}
                 >
                   <Text
                     style={[styles.challengeBtnText, { fontSize: 12 * fontScale }]}

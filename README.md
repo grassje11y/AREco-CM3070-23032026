@@ -1,11 +1,34 @@
-# Sample Snack app
+AREco Final Year Project CM3070
 
-Open the `App.js` file to start writing some code. You can preview the changes directly on your phone or tablet by scanning the **QR code** or use the iOS or Android emulators. When you're done, click **Save** and share the link!
+Template: Mobile Development, 10.2 Project Idea 1: Developing a Gamified AR App for Eco-Conscious Urban Exploration, with a focus on environmental and social sustainability
+	
+#Run
+npm start
+press s to switch it to expo.
+(do NOT run it on development, it was a test for AR )
+run it on expo, test it on a mobile device as the chatbot and search engine do not work on the web
 
-When you're ready to see everything that Expo provides (or if you want to use your own editor) you can **Download** your project and use it with [expo cli](https://docs.expo.dev/get-started/installation/#expo-cli)).
 
-All projects created in Snack are publicly available, so you can easily share the link to this project via link, or embed it on a web page with the `<>` button.
+## Tests
 
-If you're having problems, you can tweet to us [@expo](https://twitter.com/expo) or ask in our [forums](https://forums.expo.dev/c/expo-dev-tools/61) or [Discord](https://chat.expo.dev/).
+Jest with the `jest-expo` preset. Specs live under `test/` (`*.test.js`).
 
-Snack is Open Source. You can find the code on the [GitHub repo](https://github.com/expo/snack).
+```bash
+npm test
+npm run test:watch
+```
+
+**Logs / reports**
+
+- `npm run test:report` — writes full JSON results to `test/last-results.json` (ignored by git).
+- `npm run test:log` — runs tests, updates that JSON, and **appends one line** per run to `test/run-history.log` (timestamp, exit code, pass/fail counts). Commit `run-history.log` if you want a history in the repo; otherwise add it to `.gitignore`.
+
+#structure
+App.js — root state, navigation between screens, AsyncStorage persistence
+screens/ — UI screens (home, scan, games, history, settings, chat, NEA, prizes, AR, etc.)
+components/ — shared UI (e.g. quick menu)
+games/ — mini-games
+constants/ — challenges, dates, streak logic, storage helpers
+context/ — settings (theme, font scale)
+test/ — Jest tests
+

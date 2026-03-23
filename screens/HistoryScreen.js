@@ -6,7 +6,6 @@ import { useSettings } from "../context/SettingsContext";
 export default function HistoryScreen({ history }) {
   const { fontScale, theme } = useSettings();
   const isLight = theme === "light";
-  //const fontStyle = resolvedFontFamily ? { fontFamily: resolvedFontFamily } : null;
   if (!history || !history.length) {
     return (
       <View
@@ -38,6 +37,7 @@ export default function HistoryScreen({ history }) {
     );
   }
 
+  // bucket all scans by category so the folder list can expand and collapse
   const grouped = useMemo(() => {
     const map = {};
     history.forEach((item) => {
@@ -52,19 +52,21 @@ export default function HistoryScreen({ history }) {
 
   const [openCategory, setOpenCategory] = useState(null);
 
+  // open one folder or close it if it was already open
   const toggleCategory = async (cat) => {
     await Haptics.selectionAsync();
     setOpenCategory((prev) => (prev === cat ? null : cat));
   };
 
+  // pick a simple emoji label for plastic paper glass metal or trash folders
   const getFolderIconForCategory = (category) => {
     switch (category) {
       case "Plastic":
-        return "🥤";
+        return "🍼";
       case "Paper":
         return "📄";
       case "Glass":
-        return "🧴";
+        return "🫙";
       case "Metal":
         return "🥫";
       case "Trash":
@@ -97,7 +99,7 @@ export default function HistoryScreen({ history }) {
               onPress={() => toggleCategory(group.category)}
               accessibilityLabel={`Toggle history for ${group.category}`}
             >
-              <Text style={[styles.folderIcon, fontStyle]}>
+              <Text style={styles.folderIcon}>
                 {getFolderIconForCategory(group.category)}
               </Text>
               <View style={{ flex: 1 }}>
@@ -122,7 +124,7 @@ export default function HistoryScreen({ history }) {
                   {group.items.length} item(s)
                 </Text>
               </View>
-              <Text style={[styles.folderChevron, fontStyle]}>
+              <Text style={styles.folderChevron}>
                 {openCategory === group.category ? "▲" : "▼"}
               </Text>
             </Pressable>
@@ -133,7 +135,7 @@ export default function HistoryScreen({ history }) {
                   <View key={item.id} style={styles.historyCard}>
                     <Image source={{ uri: item.uri }} style={styles.historyThumb} />
                     <View style={styles.historyInfo}>
-                      <Text style={[styles.historyDate, { fontSize: 12 * fontScale }, fontStyle]}>
+                      <Text style={[styles.historyDate, { fontSize: 12 * fontScale }]}>
                         {new Date(item.createdAt).toLocaleString(undefined, {
                           day: "2-digit",
                           month: "short",

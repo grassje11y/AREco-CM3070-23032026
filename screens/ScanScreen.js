@@ -61,7 +61,7 @@ export default function ScanScreen({
                     {overlayCategory} bin
                   </Text>
                   <Text style={[styles.overlayText, { fontSize: 12 * fontScale }]}>
-                    Great! Ensure this is clean without any food stains on it.
+                    Ensure this is clean without any food stains on it.
                   </Text>
                 </Animated.View>
               </View>
