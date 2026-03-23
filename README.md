@@ -3,10 +3,10 @@ AREco Final Year Project CM3070
 Template: Mobile Development, 10.2 Project Idea 1: Developing a Gamified AR App for Eco-Conscious Urban Exploration, with a focus on environmental and social sustainability
 	
 # Run
-npm start
-press s to switch it to expo.
+- npm start
+- press s to switch it to expo.
 (do NOT run it on development, it was a test for AR )
-run it on expo, test it on a mobile device as the chatbot and search engine do not work on the web
+- run it on expo, test it on a mobile device as the chatbot and search engine do not work on the web
 
 
 ## Tests
